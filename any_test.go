@@ -19,8 +19,8 @@ func jsonString(i any) string {
 func nextImage() *types.Image {
 	return &types.Image{
 		Url:    "https://www.image.com/" + fmt.Sprint(time.Now().Unix()),
-		Width:  rand.Int(),
-		Height: rand.Int(),
+		Width:  rand.Int31(),
+		Height: rand.Int31(),
 		Format: "png",
 	}
 }
@@ -29,8 +29,8 @@ func nextVideo() *types.Video {
 	return &types.Video{
 		Url:      "http://www.video.com/" + fmt.Sprint(time.Now().Unix()),
 		Format:   "rmvb",
-		Duration: rand.Int(),
-		Size:     rand.Int(),
+		Duration: rand.Int31(),
+		Size:     rand.Int31(),
 		Image:    nextImage(),
 	}
 }
