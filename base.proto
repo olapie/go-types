@@ -145,6 +145,11 @@ message File  {
 message WebPage  {
     string title = 1;
     string summary = 2;
-	Image image = 3;
+    Image image = 3;
     string url = 4;
+}
+
+message StringPair {
+    string v1 = 1;
+    string v2 = 2;
 }

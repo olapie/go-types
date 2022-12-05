@@ -1,6 +1,7 @@
 package types
 
 import (
+	"code.olapie.com/conv"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
@@ -90,6 +91,24 @@ func NewIDFromString(s string, f IDFormat) (ID, error) {
 	default:
 		return 0, errors.New("invalid format")
 	}
+}
+
+// IDFromString parse id from string
+// if failed, return 0
+func IDFromString(s string) ID {
+	if id, err := conv.ToInt64(s); err == nil {
+		return ID(id)
+	}
+
+	if id, err := parseShortID(s); err == nil {
+		return id
+	}
+
+	if id, err := parsePrettyID(s); err == nil {
+		return id
+	}
+
+	return 0
 }
 
 func (i ID) Salt(v string) string {
