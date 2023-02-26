@@ -3,10 +3,9 @@ package types
 import (
 	"errors"
 	"fmt"
+	"net/mail"
 	"regexp"
 	"strings"
-
-	"code.olapie.com/conv"
 )
 
 var (
@@ -54,7 +53,8 @@ func (e EmailAddress) Normalize() EmailAddress {
 }
 
 func (e EmailAddress) IsValid() bool {
-	return conv.IsEmailAddress(string(e))
+	_, err := mail.ParseAddress(string(e))
+	return err == nil
 }
 
 func (e EmailAddress) String() string {
@@ -84,7 +84,7 @@ func ParseAccount(s string) (Account, error) {
 		return pn, nil
 	}
 
-	if conv.IsEmailAddress(s) {
+	if _, err := mail.ParseAddress(s); err == nil {
 		return EmailAddress(s), nil
 	}
 

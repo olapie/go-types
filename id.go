@@ -1,11 +1,11 @@
 package types
 
 import (
-	"code.olapie.com/conv"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"go.olapie.com/utils"
 	"math/rand"
 	"strings"
 	"sync/atomic"
@@ -96,7 +96,7 @@ func NewIDFromString(s string, f IDFormat) (ID, error) {
 // IDFromString parse id from string
 // if failed, return 0
 func IDFromString(s string) ID {
-	if id, err := conv.ToInt64(s); err == nil {
+	if id, err := utils.ToInt64(s); err == nil {
 		return ID(id)
 	}
 

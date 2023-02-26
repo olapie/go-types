@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"code.olapie.com/log"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -101,7 +100,6 @@ func IsPhoneNumber(s string) bool {
 	}
 	n, err := phonenumbers.Parse(s, "")
 	if err != nil {
-		log.G().Error("cannot parse", log.String("phone_number", s), log.Error(err))
 		return false
 	}
 	return phonenumbers.IsValidNumber(n)

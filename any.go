@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.olapie.com/utils"
 	"log"
 	"reflect"
 	"sync"
-
-	"code.olapie.com/conv"
 )
 
 var mu sync.RWMutex
@@ -63,7 +62,7 @@ func getAnyTypeName(prototype any) string {
 	for p.Kind() == reflect.Ptr {
 		p = p.Elem()
 	}
-	return conv.ToSnake(p.Name())
+	return utils.ToSnake(p.Name())
 }
 
 func getProtoType(typ string) (reflect.Type, bool) {

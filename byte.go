@@ -1,8 +1,6 @@
 package types
 
-import (
-	"code.olapie.com/conv"
-)
+import "go.olapie.com/utils"
 
 type ByteUnit int64
 
@@ -16,5 +14,5 @@ const (
 )
 
 func (b ByteUnit) HumanReadable() string {
-	return conv.SizeToHumanReadable(int64(b))
+	return utils.SizeToHumanReadable(int64(b))
 }

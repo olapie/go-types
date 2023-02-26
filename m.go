@@ -3,16 +3,14 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/shopspring/decimal"
+	"go.olapie.com/log"
+	"go.olapie.com/utils"
 	"math/big"
 	"net/mail"
 	"net/url"
 	"reflect"
 	"strings"
-	"time"
-
-	"code.olapie.com/conv"
-	"code.olapie.com/log"
-	"github.com/shopspring/decimal"
 )
 
 // M is a special map which provides convenient methods
@@ -127,72 +125,72 @@ func (m M) StringSlice(key string) []string {
 }
 
 func (m M) ContainsBool(key string) bool {
-	_, err := conv.ToBool(m.Get(key))
+	_, err := utils.ToBool(m.Get(key))
 	return err == nil
 }
 
 func (m M) Bool(key string) bool {
-	v, _ := conv.ToBool(m.Get(key))
+	v, _ := utils.ToBool(m.Get(key))
 	return v
 }
 
 func (m M) DefaultBool(key string, defaultValue bool) bool {
-	if v, err := conv.ToBool(m.Get(key)); err == nil {
+	if v, err := utils.ToBool(m.Get(key)); err == nil {
 		return v
 	}
 	return defaultValue
 }
 
 func (m M) MustBool(key string) bool {
-	if v, err := conv.ToBool(m.Get(key)); err == nil {
+	if v, err := utils.ToBool(m.Get(key)); err == nil {
 		return v
 	}
 	panic("No bool value for key:" + key)
 }
 
 func (m M) Int(key string) int {
-	v, _ := conv.ToInt64(m.Get(key))
+	v, _ := utils.ToInt64(m.Get(key))
 	return int(v)
 }
 
 func (m M) DefaultInt(key string, defaultVal int) int {
-	if v, err := conv.ToInt64(m.Get(key)); err == nil {
+	if v, err := utils.ToInt64(m.Get(key)); err == nil {
 		return int(v)
 	}
 	return defaultVal
 }
 
 func (m M) MustInt(key string) int {
-	if v, err := conv.ToInt64(m.Get(key)); err == nil {
+	if v, err := utils.ToInt64(m.Get(key)); err == nil {
 		return int(v)
 	}
 	panic("No int value for key:" + key)
 }
 
 func (m M) IntSlice(key string) []int {
-	l, _ := conv.ToIntSlice(m.Slice(key))
+	l, _ := utils.ToIntSlice(m.Slice(key))
 	return l
 }
 
 func (m M) ContainsInt64(key string) bool {
-	_, err := conv.ToInt64(m.Get(key))
+	_, err := utils.ToInt64(m.Get(key))
 	return err == nil
 }
 
 func (m M) Int64(key string) int64 {
-	v, _ := conv.ToInt64(m.Get(key))
+	v, _ := utils.ToInt64(m.Get(key))
 	return v
 }
 
 func (m M) DefaultInt64(key string, defaultVal int64) int64 {
-	if v, err := conv.ToInt64(m.Get(key)); err == nil {
+	if v, err := utils.ToInt64(m.Get(key)); err == nil {
 		return v
 	}
 	return defaultVal
 }
 
 func (m M) MustInt64(key string) int64 {
-	if v, err := conv.ToInt64(m.Get(key)); err == nil {
+	if v, err := utils.ToInt64(m.Get(key)); err == nil {
 		return v
 	}
 	panic("No int64 value for key:" + key)
@@ -202,7 +200,7 @@ func (m M) Int64Slice(key string) []int64 {
 	values := m.Slice(key)
 	var result []int64
 	for _, v := range values {
-		i, e := conv.ToInt64(v)
+		i, e := utils.ToInt64(v)
 		if e == nil {
 			result = append(result, i)
 		}
@@ -212,24 +210,24 @@ func (m M) Int64Slice(key string) []int64 {
 }
 
 func (m M) ContainsFloat64(key string) bool {
-	_, err := conv.ToFloat64(m.Get(key))
+	_, err := utils.ToFloat64(m.Get(key))
 	return err == nil
 }
 
 func (m M) Float64(key string) float64 {
-	v, _ := conv.ToFloat64(m.Get(key))
+	v, _ := utils.ToFloat64(m.Get(key))
 	return v
 }
 
 func (m M) DefaultFloat64(key string, defaultValue float64) float64 {
-	if v, err := conv.ToFloat64(m.Get(key)); err == nil {
+	if v, err := utils.ToFloat64(m.Get(key)); err == nil {
 		return v
 	}
 	return defaultValue
 }
 
 func (m M) MustFloat64(key string) float64 {
-	if v, err := conv.ToFloat64(m.Get(key)); err == nil {
+	if v, err := utils.ToFloat64(m.Get(key)); err == nil {
 		return v
 	}
 	panic("No float64 value for key:" + key)
@@ -239,7 +237,7 @@ func (m M) Float64Slice(key string) []float64 {
 	values := m.Slice(key)
 	var result []float64
 	for _, val := range values {
-		i, e := conv.ToFloat64(val)
+		i, e := utils.ToFloat64(val)
 		if e == nil {
 			result = append(result, i)
 		}
@@ -260,7 +258,7 @@ func (m M) BigInt(key string) *big.Int {
 		return n
 	}
 
-	if k, err := conv.ToInt64(m[key]); err == nil {
+	if k, err := utils.ToInt64(m[key]); err == nil {
 		return big.NewInt(k)
 	}
 
@@ -289,7 +287,7 @@ func (m M) BigFloat(key string) *big.Float {
 		return n
 	}
 
-	if k, err := conv.ToFloat64(m[key]); err == nil {
+	if k, err := utils.ToFloat64(m[key]); err == nil {
 		return big.NewFloat(k)
 	}
 
@@ -349,22 +347,6 @@ func (m M) Map(key string) M {
 	}
 }
 
-func (m M) Time(key string) (time.Time, bool) {
-	return m.TimeInLocation(key, time.UTC)
-}
-
-func (m M) TimeInLocation(key string, loc *time.Location) (time.Time, bool) {
-	s := strings.TrimSpace(m.String(key))
-	if s == "" {
-		return time.Time{}, false
-	}
-	d, err := conv.ToTimeInLocation(s, loc)
-	if err != nil {
-		return time.Time{}, false
-	}
-	return d, true
-}
-
 func (m M) PhoneNumber(key string) *PhoneNumber {
 	switch v := m[key].(type) {
 	case string:
@@ -373,12 +355,12 @@ func (m M) PhoneNumber(key string) *PhoneNumber {
 	case M, map[string]any:
 		data, err := json.Marshal(v)
 		if err != nil {
-			log.G().Error("cannot marshal", log.Error(err))
+			log.G().Error("cannot marshal", log.Err(err))
 		}
 		var pn *PhoneNumber
 		err = json.Unmarshal(data, &pn)
 		if err != nil {
-			log.G().Error("cannot unmarshal", log.Error(err))
+			log.G().Error("cannot unmarshal", log.Err(err))
 		}
 		pn, _ = NewPhoneNumber(pn.String())
 		return pn
@@ -463,24 +445,24 @@ func (m M) Keep(keys ...string) {
 	}
 }
 func (m M) ContainsID(key string) bool {
-	_, err := conv.ToInt64(m.Get(key))
+	_, err := utils.ToInt64(m.Get(key))
 	return err == nil
 }
 
 func (m M) ID(key string) ID {
-	v, _ := conv.ToInt64(m.Get(key))
+	v, _ := utils.ToInt64(m.Get(key))
 	return ID(v)
 }
 
 func (m M) DefaultID(key string, defaultVal ID) ID {
-	if v, err := conv.ToInt64(m.Get(key)); err == nil {
+	if v, err := utils.ToInt64(m.Get(key)); err == nil {
 		return ID(v)
 	}
 	return defaultVal
 }
 
 func (m M) MustID(key string) ID {
-	if v, err := conv.ToInt64(m.Get(key)); err == nil {
+	if v, err := utils.ToInt64(m.Get(key)); err == nil {
 		return ID(v)
 	}
 	panic("No ID value for key:" + key)
@@ -490,7 +472,7 @@ func (m M) IDSlice(key string) []ID {
 	values := m.Slice(key)
 	var result []ID
 	for _, v := range values {
-		i, e := conv.ToInt64(v)
+		i, e := utils.ToInt64(v)
 		if e == nil {
 			result = append(result, ID(i))
 		}

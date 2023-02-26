@@ -1,14 +1,12 @@
-package types_test
+package types
 
 import (
+	"go.olapie.com/utils"
 	"testing"
-
-	"code.olapie.com/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestM_AddStruct(t *testing.T) {
-	m := types.M{}
+	m := M{}
 	m["id"] = 1
 	m["name"] = "Smith"
 	var foo struct {
@@ -18,8 +16,8 @@ func TestM_AddStruct(t *testing.T) {
 	foo.Name = "Mike"
 	foo.Age = 19
 	err := m.AddStruct(foo)
-	require.NoError(t, err)
-	require.Equal(t, 1, m.Int("id"))
-	require.Equal(t, 19, m.Int("age"))
-	require.Equal(t, "Mike", m.String("name"))
+	utils.MustNotErrorT(t, err)
+	utils.MustEqualT(t, 1, m.Int("id"))
+	utils.MustEqualT(t, 19, m.Int("age"))
+	utils.MustEqualT(t, "Mike", m.String("name"))
 }
