@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package types;
 
-option go_package = "code.olapie.com/types";
+option go_package = "go.olapie.com/types";
 
 message Void {
     
