@@ -12,13 +12,6 @@ func (s ErrorString) Error() string {
 	return string(s)
 }
 
-const (
-	ErrNotExist         ErrorString = "not exist"
-	ErrAlreadyExists    ErrorString = "already exists"
-	ErrUnauthenticated  ErrorString = "unauthenticated"
-	ErrPermissionDenied ErrorString = "permission denied"
-)
-
 type Error struct {
 	code    int
 	subCode int
