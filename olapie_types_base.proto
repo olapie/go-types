@@ -164,4 +164,5 @@ message UserProfile {
   repeated Education educations = 5;
   repeated File files = 6;
   Address address = 7;
+  Place hometown = 8;
 }
