@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"go.olapie.com/log"
 	"net/http"
 )
 
@@ -89,9 +88,6 @@ func (e *Error) UnmarshalJSON(text []byte) error {
 }
 
 func NewError(code int, format string, a ...any) *Error {
-	if code <= 0 {
-		log.Warnln("invalid code")
-	}
 	msg := fmt.Sprintf(format, a...)
 	if msg == "" {
 		msg = http.StatusText(code)

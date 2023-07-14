@@ -3,14 +3,15 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/shopspring/decimal"
-	"go.olapie.com/log"
-	"go.olapie.com/utils"
+	"log/slog"
 	"math/big"
 	"net/mail"
 	"net/url"
 	"reflect"
 	"strings"
+
+	"github.com/shopspring/decimal"
+	"go.olapie.com/utils"
 )
 
 // M is a special map which provides convenient methods
@@ -355,12 +356,12 @@ func (m M) PhoneNumber(key string) *PhoneNumber {
 	case M, map[string]any:
 		data, err := json.Marshal(v)
 		if err != nil {
-			log.G().Error("cannot marshal", log.Err(err))
+			slog.Error("cannot marshal", slog.String("err", err.Error()))
 		}
 		var pn *PhoneNumber
 		err = json.Unmarshal(data, &pn)
 		if err != nil {
-			log.G().Error("cannot unmarshal", log.Err(err))
+			slog.Error("cannot unmarshal", slog.String("err", err.Error()))
 		}
 		pn, _ = NewPhoneNumber(pn.String())
 		return pn
