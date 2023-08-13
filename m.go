@@ -431,10 +431,8 @@ func (m M) JSONString() string {
 }
 
 func (m M) Remove(keys ...string) {
-	for k := range m {
-		if indexOfStr(keys, k) < 0 {
-			delete(m, k)
-		}
+	for _, k := range keys {
+		delete(m, k)
 	}
 }
 
