@@ -1,8 +1,9 @@
 package types
 
 import (
-	"go.olapie.com/utils"
 	"testing"
+
+	"go.olapie.com/utils"
 )
 
 func TestM_AddStruct(t *testing.T) {

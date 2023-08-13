@@ -2,9 +2,10 @@ package types
 
 import (
 	"encoding/json"
-	"go.olapie.com/utils"
 	"sort"
 	"testing"
+
+	"go.olapie.com/utils"
 )
 
 func TestMarshalJSON(t *testing.T) {

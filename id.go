@@ -5,11 +5,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"go.olapie.com/utils"
 	"math/rand"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"go.olapie.com/utils"
 )
 
 const prettyTableSize = 34

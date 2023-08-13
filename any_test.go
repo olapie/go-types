@@ -3,10 +3,11 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"go.olapie.com/utils"
 	"math/rand"
 	"testing"
 	"time"
+
+	"go.olapie.com/utils"
 )
 
 func jsonString(i any) string {

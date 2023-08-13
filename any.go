@@ -2,7 +2,6 @@ package types
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -123,28 +122,24 @@ const (
 	keyAnyVal  = "@v"
 )
 
+type anyJsonObject struct {
+	Type  string          `json:"@t"`
+	Value json.RawMessage `json:"@v"`
+}
+
 func (a *Any) UnmarshalJSON(b []byte) error {
-	var m map[string]any
-	if err := json.Unmarshal(b, &m); err != nil {
+	var obj anyJsonObject
+	if err := json.Unmarshal(b, &obj); err != nil {
 		return err
 	}
 
-	typ, _ := m[keyAnyType].(string)
-	pt, found := getProtoType(typ)
+	pt, found := getProtoType(obj.Type)
 	if !found {
-		a.val = m[keyAnyVal]
-		if a.val == nil {
-			return errors.New("value is empty")
-		}
-
-		if getAnyTypeName(a.val) == typ {
-			return nil
-		}
-		return fmt.Errorf("type doesn't match: %s and %s", typ, getAnyTypeName(a.val))
+		return fmt.Errorf("unkonwn type: %s", obj.Type)
 	}
 
-	if v, ok := m[keyAnyVal]; ok {
-		b, _ = json.Marshal(v)
+	if len(obj.Value) != 0 {
+		b = obj.Value
 	}
 
 	var ptrVal = reflect.New(pt)
