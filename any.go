@@ -10,28 +10,33 @@ import (
 	"go.olapie.com/utils"
 )
 
-var mu sync.RWMutex
-var nameToPrototype = map[string]reflect.Type{
-	"int":     reflect.TypeOf(int(1)),
-	"int8":    reflect.TypeOf(int8(1)),
-	"int16":   reflect.TypeOf(int16(1)),
-	"int32":   reflect.TypeOf(int32(1)),
-	"int64":   reflect.TypeOf(int64(1)),
-	"uint":    reflect.TypeOf(uint(1)),
-	"uint8":   reflect.TypeOf(uint8(1)),
-	"uint16":  reflect.TypeOf(uint16(1)),
-	"uint32":  reflect.TypeOf(uint32(1)),
-	"uint64":  reflect.TypeOf(uint64(1)),
-	"float32": reflect.TypeOf(float32(1)),
-	"float64": reflect.TypeOf(float64(1)),
-	"bool":    reflect.TypeOf(true),
-	"string":  reflect.TypeOf(""),
-}
+var initNameToPrototypeOnce sync.Once
+var nameToPrototypeMutex sync.RWMutex
+var nameToPrototype map[string]reflect.Type
 
-func init() {
-	RegisterAnyType(&Audio{})
-	RegisterAnyType(&Image{})
-	RegisterAnyType(&Video{})
+func doInitPrototypeOnce() {
+	initNameToPrototypeOnce.Do(
+		func() {
+			nameToPrototype = map[string]reflect.Type{
+				"int":     reflect.TypeOf(int(1)),
+				"int8":    reflect.TypeOf(int8(1)),
+				"int16":   reflect.TypeOf(int16(1)),
+				"int32":   reflect.TypeOf(int32(1)),
+				"int64":   reflect.TypeOf(int64(1)),
+				"uint":    reflect.TypeOf(uint(1)),
+				"uint8":   reflect.TypeOf(uint8(1)),
+				"uint16":  reflect.TypeOf(uint16(1)),
+				"uint32":  reflect.TypeOf(uint32(1)),
+				"uint64":  reflect.TypeOf(uint64(1)),
+				"float32": reflect.TypeOf(float32(1)),
+				"float64": reflect.TypeOf(float64(1)),
+				"bool":    reflect.TypeOf(true),
+				"string":  reflect.TypeOf(""),
+			}
+			nameToPrototype[getAnyTypeName(&Audio{})] = reflect.TypeOf(&Audio{})
+			nameToPrototype[getAnyTypeName(&Image{})] = reflect.TypeOf(&Image{})
+			nameToPrototype[getAnyTypeName(&Video{})] = reflect.TypeOf(&Video{})
+		})
 }
 
 type AnyType interface {
@@ -43,9 +48,10 @@ type AnyType interface {
 //
 //	contents.Register("image", &contents.Image{})
 func RegisterAnyType(prototype any) {
+	doInitPrototypeOnce()
 	name := getAnyTypeName(prototype)
-	mu.Lock()
-	defer mu.Unlock()
+	nameToPrototypeMutex.Lock()
+	defer nameToPrototypeMutex.Unlock()
 	if _, ok := nameToPrototype[name]; ok {
 		log.Fatalf("Duplicate name %s", name)
 	}
@@ -66,8 +72,8 @@ func getAnyTypeName(prototype any) string {
 }
 
 func getProtoType(typ string) (reflect.Type, bool) {
-	mu.RLock()
-	defer mu.RUnlock()
+	nameToPrototypeMutex.RLock()
+	defer nameToPrototypeMutex.RUnlock()
 	if prototype, ok := nameToPrototype[typ]; ok {
 		return prototype, true
 	}
@@ -133,6 +139,7 @@ func (a *Any) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
+	doInitPrototypeOnce()
 	pt, found := getProtoType(obj.Type)
 	if !found {
 		return fmt.Errorf("unkonwn type: %s", obj.Type)
