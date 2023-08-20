@@ -3,6 +3,8 @@ syntax = "proto3";
 package types;
 
 // protoc olapie_types_base.proto --go_out=.
+// long name is to avoid conflicts with other file name
+// same proto file names are not allowed in protocol buffer
 
 option go_package = "go.olapie.com/types";
 
