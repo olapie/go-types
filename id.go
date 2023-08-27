@@ -5,30 +5,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/big"
 	"math/rand"
-	"strings"
+	"strconv"
 	"sync/atomic"
 	"time"
-
-	"go.olapie.com/utils"
-)
-
-const prettyTableSize = 34
-
-var prettyTable = [prettyTableSize]byte{
-	'1', '2', '3', '4', '5', '6', '7', '8', '9',
-	'A', 'B', 'C', 'D', 'E', 'F', 'G',
-	'H', 'I', 'J', 'K', 'L', 'M', 'N',
-	'P', 'Q',
-	'R', 'S', 'T',
-	'U', 'V', 'W',
-	'X', 'Y', 'Z'}
-
-type IDFormat int
-
-const (
-	ShortIDFormat IDFormat = iota
-	PrettyIDFormat
 )
 
 type ID int64
@@ -38,78 +19,15 @@ func (i ID) Int() int64 {
 	return int64(i)
 }
 
-// Short returns a short representation of id
-func (i ID) Short() string {
+func (i ID) Base62() string {
 	if i < 0 {
 		panic("invalid id")
 	}
-	var bytes [16]byte
-	k := int64(i)
-	n := 15
-	for {
-		j := k % 62
-		switch {
-		case j <= 9:
-			bytes[n] = byte('0' + j)
-		case j <= 35:
-			bytes[n] = byte('A' + j - 10)
-		default:
-			bytes[n] = byte('a' + j - 36)
-		}
-		k /= 62
-		if k == 0 {
-			return string(bytes[n:])
-		}
-		n--
-	}
+	return big.NewInt(int64(i)).Text(62)
 }
 
-// Pretty returns a incasesensitive pretty representation of id
-func (i ID) Pretty() string {
-	if i < 0 {
-		panic("invalid id")
-	}
-	var bytes [16]byte
-	k := int64(i)
-	n := 15
-
-	for {
-		bytes[n] = prettyTable[k%prettyTableSize]
-		k /= prettyTableSize
-		if k == 0 {
-			return string(bytes[n:])
-		}
-		n--
-	}
-}
-
-func NewIDFromString(s string, f IDFormat) (ID, error) {
-	switch f {
-	case ShortIDFormat:
-		return parseShortID(s)
-	case PrettyIDFormat:
-		return parsePrettyID(s)
-	default:
-		return 0, errors.New("invalid format")
-	}
-}
-
-// IDFromString parse id from string
-// if failed, return 0
-func IDFromString(s string) ID {
-	if id, err := utils.ToInt64(s); err == nil {
-		return ID(id)
-	}
-
-	if id, err := parseShortID(s); err == nil {
-		return id
-	}
-
-	if id, err := parsePrettyID(s); err == nil {
-		return id
-	}
-
-	return 0
+func (i ID) Base36() string {
+	return strconv.FormatInt(int64(i), 36)
 }
 
 func (i ID) Salt(v string) string {
@@ -121,67 +39,22 @@ func (i ID) IsValid() bool {
 	return i > 0
 }
 
-func parseShortID(s string) (ID, error) {
-	if len(s) == 0 {
-		return 0, errors.New("parse error")
+func IDFromBase62(s string) (id ID, ok bool) {
+	i, ok := big.NewInt(0).SetString(s, 62)
+	if ok {
+		return ID(i.Int64()), true
 	}
-
-	var bytes = []byte(s)
-	var k int64
-	var v int64
-	for _, b := range bytes {
-		switch {
-		case b >= '0' && b <= '9':
-			v = int64(b - '0')
-		case b >= 'A' && b <= 'Z':
-			v = int64(10 + b - 'A')
-		case b >= 'a' && b <= 'z':
-			v = int64(36 + b - 'a')
-		default:
-			return 0, errors.New("parse error")
-		}
-		k = k*62 + v
-	}
-	return ID(k), nil
+	return 0, false
 }
 
-func parsePrettyID(s string) (ID, error) {
-	if len(s) == 0 {
-		return 0, errors.New("parse error")
+func IDFromBase36(s string) (id ID, ok bool) {
+	i, err := strconv.ParseInt(s, 36, 64)
+	if err != nil {
+		return 0, false
 	}
-
-	s = strings.ToUpper(s)
-	var bytes = []byte(s)
-	var k int64
-	for _, b := range bytes {
-		i := searchPrettyTable(b)
-		if i <= 0 {
-			return 0, errors.New("parse error")
-		}
-		k = k*prettyTableSize + int64(i)
-	}
-	return ID(k), nil
+	return ID(i), true
 }
 
-func searchPrettyTable(v byte) int {
-	left := 0
-	right := prettyTableSize - 1
-	for right >= left {
-		mid := (left + right) / 2
-		if prettyTable[mid] == v {
-			return mid
-		} else if prettyTable[mid] > v {
-			right = mid - 1
-		} else {
-			left = mid + 1
-		}
-	}
-
-	return -1
-}
-
-// ------------------------------
-// IDGenerator
 type IDGenerator interface {
 	NextID() ID
 }
@@ -190,52 +63,80 @@ type NextNumber interface {
 	NextNumber() int64
 }
 
-type SnakeIDGenerator struct {
-	seqSize   uint
-	shardSize uint
+type ClockUnit int
 
-	clock    NextNumber
-	sharding NextNumber
+const (
+	ClockUnitSecond ClockUnit = iota
+	ClockUnitMillisecond
+	ClockUnitMicrosecond
+)
 
-	counter int64
+type SnakeIDGeneratorOptions struct {
+	SeqBitsSize   uint
+	ShardBitsSize uint
+
+	ClockUnit ClockUnit
+	Sharding  NextNumber
 }
 
-func NewSnakeIDGenerator(shardBitsSize, seqBitsSize uint, clock, sharding NextNumber) *SnakeIDGenerator {
-	if seqBitsSize < 1 || seqBitsSize > 16 {
-		panic("seqBitsSize should be [1,16]")
+type SnakeIDGenerator struct {
+	options SnakeIDGeneratorOptions
+	counter int64
+	epoch   time.Time
+}
+
+func NewSnakeIDGenerator(epoch time.Time, opts ...func(options *SnakeIDGeneratorOptions)) (*SnakeIDGenerator, error) {
+	options := new(SnakeIDGeneratorOptions)
+	for _, opt := range opts {
+		opt(options)
 	}
 
-	if clock == nil {
-		panic("clock is nil")
+	if options.SeqBitsSize < 1 || options.SeqBitsSize > 16 {
+		return nil, errors.New("invalid options: SeqBitsSize must be in range [1,16]")
 	}
 
-	if shardBitsSize > 8 {
-		panic("shardBitsSize should be [0,8]")
+	switch options.ClockUnit {
+	case ClockUnitSecond, ClockUnitMillisecond, ClockUnitMicrosecond:
+		break
+	default:
+		return nil, fmt.Errorf("invalid options: ClockUnit %d is not defined", options.ClockUnit)
 	}
 
-	if shardBitsSize > 0 && sharding == nil {
-		panic("sharding is nil")
+	if options.ShardBitsSize > 8 {
+		return nil, errors.New("invalid options: ShardBitsSize must be in range [0,8]")
 	}
 
-	if shardBitsSize+seqBitsSize >= 20 {
-		panic("shardBitsSize + seqBitsSize should be less than 20")
+	if options.ShardBitsSize > 0 && options.Sharding == nil {
+		return nil, errors.New("invalid options: Sharding cannot be nil while ShardBitsSize is non-zero")
+	}
+
+	if options.ShardBitsSize+options.SeqBitsSize >= 20 {
+		return nil, fmt.Errorf("invalid options: ShardBitsSize %d + SeqBitsSize %d must be less than 20", options.ShardBitsSize, options.SeqBitsSize)
 	}
 
 	return &SnakeIDGenerator{
-		seqSize:   seqBitsSize,
-		shardSize: shardBitsSize,
-		clock:     clock,
-		sharding:  sharding,
-	}
+		options: *options,
+		counter: 0,
+		epoch:   epoch,
+	}, nil
 }
 
 func (g *SnakeIDGenerator) NextID() ID {
-	id := g.clock.NextNumber() << (g.seqSize + g.shardSize)
-	if g.shardSize > 0 {
-		id |= (g.sharding.NextNumber() % (1 << g.shardSize)) << g.seqSize
+	var elapsed time.Duration
+	switch g.options.ClockUnit {
+	case ClockUnitSecond:
+		elapsed = time.Since(g.epoch) / time.Second
+	case ClockUnitMillisecond:
+		elapsed = time.Since(g.epoch) / time.Millisecond
+	case ClockUnitMicrosecond:
+		elapsed = time.Since(g.epoch) / time.Microsecond
+	}
+	id := int64(elapsed) << (g.options.SeqBitsSize + g.options.ShardBitsSize)
+	if g.options.ShardBitsSize > 0 {
+		id |= (g.options.Sharding.NextNumber() % (1 << g.options.ShardBitsSize)) << g.options.SeqBitsSize
 	}
 	n := atomic.AddInt64(&g.counter, 1)
-	id |= n % (1 << g.seqSize)
+	id |= n % (1 << g.options.SeqBitsSize)
 	return ID(id)
 }
 
@@ -243,19 +144,22 @@ func (g *SnakeIDGenerator) NextID() ID {
 // The maximum integer part of double is 2^53，so it'd better to control id bits size less than 53
 // id is made of time, shard and seq
 // Putting the time at the beginning can ensure the id unique and increasing in case increase shard or seq bits size in the future
-var (
-	epoch                   = time.Date(2019, time.January, 2, 15, 4, 5, 0, time.UTC)
-	idGenerator IDGenerator = NewSnakeIDGenerator(0, 6, nextMilliseconds, nil)
-)
+var idGenerator IDGenerator
+
+func init() {
+	var err error
+	idGenerator, err = NewSnakeIDGenerator(time.Date(2023, time.August, 27, 15, 4, 5, 0, time.UTC), func(options *SnakeIDGeneratorOptions) {
+		options.SeqBitsSize = 6
+	})
+	if err != nil {
+		panic(err)
+	}
+}
 
 type NextNumberFunc func() int64
 
 func (f NextNumberFunc) NextNumber() int64 {
 	return f()
-}
-
-var nextMilliseconds NextNumberFunc = func() int64 {
-	return time.Since(epoch).Nanoseconds() / 1e6
 }
 
 func NextID() ID {

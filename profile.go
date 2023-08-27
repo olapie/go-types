@@ -96,7 +96,7 @@ func ParseAccount(s string) (Account, error) {
 }
 
 func RandomEmailAddress() EmailAddress {
-	s := RandomID().Short() + "@" + RandomID().Short() + ".com"
+	s := RandomID().Base62() + "@" + RandomID().Base62() + ".com"
 	return EmailAddress(s)
 }
 
@@ -105,5 +105,5 @@ func RandomPhoneNumber() *PhoneNumber {
 }
 
 func RandomNickname() Nickname {
-	return Nickname(RandomID().Short())
+	return Nickname(RandomID().Base62())
 }
