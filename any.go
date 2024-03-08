@@ -3,11 +3,10 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"go.olapie.com/naming"
 	"log"
 	"reflect"
 	"sync"
-
-	"go.olapie.com/utils"
 )
 
 var initNameToPrototypeOnce sync.Once
@@ -68,7 +67,7 @@ func getAnyTypeName(prototype any) string {
 	for p.Kind() == reflect.Ptr {
 		p = p.Elem()
 	}
-	return utils.ToSnake(p.Name())
+	return naming.ToSnake(p.Name())
 }
 
 func getProtoType(typ string) (reflect.Type, bool) {
