@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"go.olapie.com/conv"
 	"log/slog"
 	"math/big"
 	"net/mail"
@@ -12,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/shopspring/decimal"
+	"go.olapie.com/conv"
 )
 
 // M is a special map which provides convenient methods
